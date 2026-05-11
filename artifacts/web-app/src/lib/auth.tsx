@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const { data: user, isLoading, isError } = useGetMe({
     query: {
+      queryKey: ["me", !!(token || adminToken)],
       enabled: !!(token || adminToken),
       retry: false,
     }

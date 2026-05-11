@@ -22,7 +22,7 @@ const UserSchema = new Schema<IUser>(
     name: { type: String, required: true, trim: true, minlength: 2 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true, minlength: 8, select: false },
-    phone: { type: String, trim: true },
+    phone: { type: String, trim: true, sparse: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     status: { type: String, enum: ["active", "suspended", "banned"], default: "active" },
     walletBalance: { type: Number, default: 0, min: 0 },
