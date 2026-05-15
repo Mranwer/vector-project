@@ -1,29 +1,34 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import app from "./app";
 import { logger } from "./lib/logger";
 import { connectDB } from "./lib/mongoose";
 
-const rawPort = process.env["PORT"];
+/* =========================
+   PORT SAFE HANDLING
+========================= */
+const port = Number(process.env.PORT || 5000);
 
-if (!rawPort) {
-  throw new Error("PORT environment variable is required but was not provided.");
+if (port <= 0 || Number.isNaN(port)) {
+  throw new Error(`❌ Invalid PORT value: ${process.env.PORT}`);
 }
 
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
+/* =========================
+   START SERVER
+========================= */
 async function start() {
-  await connectDB();
+  try {
+    await connectDB();
 
-  app.listen(port, (err) => {
-    if (err) {
-      logger.error({ err }, "Error listening on port");
-      process.exit(1);
-    }
-    logger.info({ port }, "Server listening");
-  });
+    app.listen(port, () => {
+      logger.info(`🚀 Server running on port ${port}`);
+    });
+
+  } catch (err) {
+    logger.error({ err }, "❌ Server startup failed");
+    process.exit(1);
+  }
 }
 
 start();

@@ -1,5 +1,4 @@
 import { Router, Response } from "express";
-import mongoose from "mongoose";
 import { requireAuth, AuthRequest } from "../middlewares/auth";
 import { Order } from "../models/Order";
 import { Service } from "../models/Service";
@@ -33,16 +32,26 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
     const skip = (page - 1) * limit;
     const status = req.query["status"] as string;
 
-    const query: Record<string, unknown> = { userId: req.user!.id };
-    if (status) query["status"] = status;
+    const query: Record<string, unknown> = {
+      userId: req.user!.id,
+    };
+
+    if (status) {
+      query["status"] = status;
+    }
 
     const [orders, total] = await Promise.all([
-      Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      Order.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
       Order.countDocuments(query),
     ]);
 
     res.json({
-      orders: orders.map((o) => ({
+      orders: orders.map((o: any) => ({
         id: o._id.toString(),
         userId: o.userId.toString(),
         serviceId: o.serviceId.toString(),
@@ -52,8 +61,8 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
         status: o.status,
         notes: o.notes || null,
         deliveryTime: o.deliveryTime || null,
-        createdAt: o.createdAt.toISOString(),
-        updatedAt: o.updatedAt.toISOString(),
+        createdAt: new Date(o.createdAt).toISOString(),
+        updatedAt: new Date(o.updatedAt).toISOString(),
       })),
       total,
       page,
@@ -61,107 +70,131 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Get orders error");
-    res.status(500).json({ error: "Internal server error" });
+
+    res.status(500).json({
+      error: "Internal server error",
+    });
   }
 });
 
-// POST /api/orders — purchase a service
+// POST /api/orders
 router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const { serviceId, notes } = req.body;
+
+    // Validation
     if (!serviceId) {
-      res.status(400).json({ error: "serviceId is required" });
+      res.status(400).json({
+        error: "serviceId is required",
+      });
       return;
     }
 
+    // Find service and user
     const [service, user] = await Promise.all([
-      Service.findById(serviceId).session(session),
-      User.findById(req.user!.id).session(session),
+      Service.findById(serviceId),
+      User.findById(req.user!.id),
     ]);
 
+    // Service check
     if (!service || service.status !== "active") {
-      await session.abortTransaction();
-      res.status(404).json({ error: "Service not found or unavailable" });
+      res.status(404).json({
+        error: "Service not found or unavailable",
+      });
       return;
     }
 
+    // User check
     if (!user) {
-      await session.abortTransaction();
-      res.status(404).json({ error: "User not found" });
+      res.status(404).json({
+        error: "User not found",
+      });
       return;
     }
 
-    if (user.walletBalance < service.pointsCost) {
-      await session.abortTransaction();
-      res.status(400).json({ error: "Insufficient wallet balance. Please recharge your wallet." });
+    // Wallet balance check
+    const walletBalance = user.walletBalance ?? 0;
+    const pointsCost = service.pointsCost ?? 0;
+
+    if (walletBalance < pointsCost) {
+      res.status(400).json({
+        error: "Insufficient wallet balance. Please recharge your wallet.",
+      });
       return;
     }
 
-    // Deduct points
-    user.walletBalance -= service.pointsCost;
-    await user.save({ session });
+    // Deduct balance
+    user.walletBalance = walletBalance - pointsCost;
+
+    await user.save();
 
     // Create order
-    const [order] = await Order.create(
-      [
-        {
-          userId: user._id,
-          serviceId: service._id,
-          serviceName: service.title,
-          serviceCategory: service.category,
-          pointsCost: service.pointsCost,
-          status: "pending",
-          notes: notes || undefined,
-          deliveryTime: service.deliveryTime,
-        },
-      ],
-      { session }
-    );
+    const order = await Order.create({
+      userId: user._id,
+      serviceId: service._id,
+      serviceName: service.title,
+      serviceCategory: service.category,
+      pointsCost: service.pointsCost,
+      status: "pending",
+      notes: notes || undefined,
+      deliveryTime: service.deliveryTime,
+    });
 
-    // Create debit transaction
-    await Transaction.create(
-      [
-        {
-          userId: user._id,
-          type: "debit",
-          amount: service.pointsCost,
-          description: `Purchased: ${service.title}`,
-          status: "success",
-          referenceId: order._id.toString(),
-        },
-      ],
-      { session }
-    );
+    // Create transaction
+    await Transaction.create({
+      userId: user._id,
+      type: "debit",
+      amount: service.pointsCost,
+      description: `Purchased: ${service.title}`,
+      status: "success",
+      referenceId: order._id.toString(),
+    });
 
-    await session.commitTransaction();
+    // Send email (non-blocking)
+    sendOrderConfirmationEmail(
+      user.email,
+      user.name,
+      service.title,
+      order._id.toString()
+    ).catch((err) => {
+      console.error("Email send failed:", err);
+    });
 
-    // Send confirmation email (non-blocking)
-    sendOrderConfirmationEmail(user.email, user.name, service.title, order._id.toString()).catch(() => {});
-
+    // Success response
     res.status(201).json(formatOrder(order));
   } catch (err) {
-    await session.abortTransaction();
+    console.error("Create order error:", err);
+
     req.log.error({ err }, "Create order error");
-    res.status(500).json({ error: "Internal server error" });
-  } finally {
-    session.endSession();
+
+    res.status(500).json({
+      error: "Internal server error",
+    });
   }
 });
 
 // GET /api/orders/:id
 router.get("/orders/:id", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const order = await Order.findOne({ _id: req.params["id"], userId: req.user!.id });
+    const order = await Order.findOne({
+      _id: req.params["id"],
+      userId: req.user!.id,
+    });
+
     if (!order) {
-      res.status(404).json({ error: "Order not found" });
+      res.status(404).json({
+        error: "Order not found",
+      });
       return;
     }
+
     res.json(formatOrder(order));
-  } catch {
-    res.status(404).json({ error: "Order not found" });
+  } catch (err) {
+    console.error("Get order error:", err);
+
+    res.status(404).json({
+      error: "Order not found",
+    });
   }
 });
 

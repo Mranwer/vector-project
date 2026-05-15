@@ -96,6 +96,7 @@ export default function ServicesPage() {
                 <Card key={service.id} className="glass-panel overflow-hidden hover:border-primary/30 transition-all duration-300 group">
                   <Link href={`/services/${service.id}`}>
                     {service.thumbnail && (
+                      
                       <div className="aspect-video overflow-hidden">
                         <img src={service.thumbnail} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       </div>

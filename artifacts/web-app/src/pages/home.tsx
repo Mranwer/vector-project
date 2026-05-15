@@ -22,46 +22,76 @@ export default function HomePage() {
   return (
     <PublicLayout>
       {/* Hero */}
-      <section className="relative overflow-hidden pt-24 pb-32 flex flex-col items-center text-center px-4">
-        <div className="absolute inset-0 -z-10 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-secondary/5 blur-3xl" />
-        </div>
-        <Badge variant="outline" className="mb-6 text-primary border-primary/30 px-4 py-1.5">
-          <Zap className="w-3.5 h-3.5 mr-1.5" /> Premium Digital Services
-        </Badge>
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight max-w-4xl mb-6 bg-gradient-to-br from-foreground via-foreground/90 to-foreground/50 bg-clip-text text-transparent">
-          Your Vision.<br />Expert Execution.
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-          Browse premium digital services. Pay with wallet points. Get results from vetted professionals — fast, transparent, and reliable.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link href="/services">
-            <Button size="lg" className="shadow-[0_0_30px_rgba(59,130,246,0.4)] gap-2">
-              Browse Services <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="lg" variant="outline">Get Started Free</Button>
-          </Link>
-        </div>
+     {/* Hero */}
+<section className="relative overflow-hidden pt-24 pb-32 flex flex-col items-center text-center px-4 min-h-screen justify-center">
 
-        {/* Stats */}
-        <div className="mt-20 grid grid-cols-3 gap-8 md:gap-16 text-center">
-          {[
-            { value: "500+", label: "Services Delivered" },
-            { value: "99%", label: "Satisfaction Rate" },
-            { value: "24h", label: "Avg. First Response" },
-          ].map(stat => (
-            <div key={stat.label}>
-              <div className="text-3xl md:text-4xl font-bold text-primary mb-1">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+  {/* Background Video */}
+  <video
+    autoPlay
+    muted
+    loop
+    playsInline
+    className="absolute inset-0 w-full h-full object-cover"
+  >
+    <source src="/hero-video.mp4" type="video/mp4" />
+  </video>
 
+  {/* Dark Overlay */}
+  <div className="absolute inset-0 bg-black/60" />
+
+  {/* Existing Background Blur Effects */}
+  <div className="absolute inset-0 -z-10 pointer-events-none">
+    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+    <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-secondary/5 blur-3xl" />
+  </div>
+
+  {/* Content */}
+  <div className="relative z-10 flex flex-col items-center">
+    <Badge variant="outline" className="mb-6 text-primary border-primary/30 px-4 py-1.5 bg-black/30 backdrop-blur">
+      <Zap className="w-3.5 h-3.5 mr-1.5" /> Premium Digital Services
+    </Badge>
+
+    <h1 className="text-5xl md:text-7xl font-bold tracking-tight max-w-4xl mb-6 text-white">
+      Your Vision.<br />Expert Execution.
+    </h1>
+
+    <p className="text-lg md:text-xl text-gray-200 max-w-2xl mb-10 leading-relaxed">
+      Browse premium digital services. Pay with wallet points. Get results from vetted professionals — fast, transparent, and reliable.
+    </p>
+
+    <div className="flex flex-col sm:flex-row gap-4">
+      <Link href="/services">
+        <Button size="lg" className="shadow-[0_0_30px_rgba(59,130,246,0.4)] gap-2">
+          Browse Services <ArrowRight className="w-4 h-4" />
+        </Button>
+      </Link>
+
+      <Link href="/register">
+        <Button size="lg" variant="outline">
+          Get Started Free
+        </Button>
+      </Link>
+    </div>
+
+    {/* Stats */}
+    <div className="mt-20 grid grid-cols-3 gap-8 md:gap-16 text-center">
+      {[
+        { value: "500+", label: "Services Delivered" },
+        { value: "99%", label: "Satisfaction Rate" },
+        { value: "24h", label: "Avg. First Response" },
+      ].map(stat => (
+        <div key={stat.label}>
+          <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
+            {stat.value}
+          </div>
+          <div className="text-sm text-gray-300">
+            {stat.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
       {/* Featured Services */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
