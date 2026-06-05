@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useParams } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useCreateOrder } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 
@@ -46,6 +46,11 @@ interface Service {
   packages: ServicePackage[];
 }
 
+interface SelectedOrder {
+  service: Service;
+  pkg: ServicePackage;
+}
+
 function getTierStyle(tier: string) {
   switch (tier) {
     case "Basic":    return { card: "border-white/10 bg-muted/5",           badge: "bg-muted text-muted-foreground" };
@@ -56,27 +61,29 @@ function getTierStyle(tier: string) {
 }
 
 export default function ServiceDetailPage() {
-  const { id } = useParams();
   const [, navigate] = useLocation();
   const { user } = useAuth();
 
-  const [service, setService] = useState<Service | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPackage, setSelectedPackage] = useState<ServicePackage | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<SelectedOrder | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
-    fetch(`/api/services/${id}`)
+    fetch("/api/services?limit=100")
       .then(r => r.json())
       .then(data => {
-        setService(data);
+        // Sirf wahi services jo packages rakhti hain
+        const withPackages = (data.services ?? []).filter(
+          (s: Service) => s.packages && s.packages.length > 0
+        );
+        setServices(withPackages);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id]);
+  }, []);
 
   const { mutate: placeOrder, isPending: isOrdering } = useCreateOrder({
     mutation: {
@@ -91,71 +98,31 @@ export default function ServiceDetailPage() {
     },
   });
 
-  const handleOrder = (pkg: ServicePackage) => {
+  const handleOrder = (service: Service, pkg: ServicePackage) => {
     if (!user) { navigate("/login"); return; }
-    setSelectedPackage(pkg);
-    setOrderError("");
-    setShowConfirm(true);
-  };
-
-  const handleOrderDirect = () => {
-    if (!user) { navigate("/login"); return; }
-    if (!service) return;
-    setSelectedPackage(null);
+    setSelectedOrder({ service, pkg });
     setOrderError("");
     setShowConfirm(true);
   };
 
   const confirmOrder = () => {
-    if (!service) return;
-
-    if (selectedPackage) {
-      // Package order — package ki _id use karo
-      placeOrder({
-        data: {
-          serviceId: service.id,
-          packageId: selectedPackage._id,
-          notes: `${selectedPackage.tier} - ${selectedPackage.group}`,
-        },
-      });
-    } else {
-      // Direct service order
-      placeOrder({
-        data: {
-          serviceId: service.id,
-        },
-      });
-    }
+    if (!selectedOrder) return;
+    placeOrder({
+      data: {
+        serviceId: selectedOrder.service.id,
+        notes: `${selectedOrder.pkg.tier} - ${selectedOrder.pkg.group}`,
+      },
+    });
   };
 
-  if (loading) {
-    return (
-      <PublicLayout>
-        <div className="pt-24 pb-20 px-4">
-          <div className="container mx-auto max-w-6xl">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="glass-panel rounded-xl h-64 animate-pulse" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </PublicLayout>
-    );
-  }
-
-  if (!service) {
-    return (
-      <PublicLayout>
-        <div className="pt-24 text-center text-muted-foreground">
-          Service not found.
-        </div>
-      </PublicLayout>
-    );
-  }
-
   const userBalance = user?.walletBalance ?? 0;
-  const hasPackages = service.packages && service.packages.length > 0;
+
+  // Group services by category
+  const grouped = services.reduce<Record<string, Service[]>>((acc, svc) => {
+    if (!acc[svc.category]) acc[svc.category] = [];
+    acc[svc.category].push(svc);
+    return acc;
+  }, {});
 
   return (
     <PublicLayout>
@@ -170,146 +137,132 @@ export default function ServiceDetailPage() {
             </Button>
           </Link>
 
-          {/* Service Header */}
+          {/* Heading */}
           <div className="mb-10">
-            {service.thumbnail && (
-              <img
-                src={service.thumbnail}
-                alt={service.title}
-                className="w-full max-h-64 object-cover rounded-2xl mb-6"
-              />
-            )}
-
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <Badge variant="secondary">{service.category}</Badge>
-              <Badge variant="outline">{service.subcategory}</Badge>
-            </div>
-
-            <h1 className="text-3xl font-bold mb-2">{service.title}</h1>
-
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
-              <span className="flex items-center gap-1">
-                <ZapIcon className="w-4 h-4 text-primary" />
-                <strong className="text-primary">{service.pointsCost.toLocaleString()} pts</strong>
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {service.deliveryTime}
-              </span>
-            </div>
-
-            <div className="text-muted-foreground text-sm leading-relaxed mb-4">
-              {service.description.split('\n').map((line, i) => (
-                <p key={i} className="mb-1">{line}</p>
-              ))}
-            </div>
-
-            {service.features.length > 0 && (
-              <ul className="space-y-1.5 mb-6">
-                {service.features.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-            )}
-
+            <h1 className="text-3xl font-bold mb-2">All Service Packages</h1>
+            <p className="text-muted-foreground text-sm">
+              Apni zaroorat ke hisaab se koi bhi package choose karo
+            </p>
             {user && (
-              <div className="inline-flex items-center gap-2 text-sm bg-primary/5 border border-primary/10 rounded-xl px-4 py-2 mb-6">
+              <div className="inline-flex items-center gap-2 mt-4 text-sm bg-primary/5 border border-primary/10 rounded-xl px-4 py-2">
                 <ZapIcon className="w-4 h-4 text-primary" />
                 <span className="text-muted-foreground">Your Balance:</span>
                 <strong className="text-primary">{userBalance.toLocaleString()} pts</strong>
               </div>
             )}
-
-            {/* Direct order button (no packages) */}
-            {!hasPackages && (
-              <Button
-                size="lg"
-                disabled={!!user && userBalance < service.pointsCost}
-                onClick={handleOrderDirect}
-              >
-                {!user
-                  ? "Login to Order"
-                  : userBalance < service.pointsCost
-                  ? "Insufficient Balance"
-                  : `Order Now — ${service.pointsCost.toLocaleString()} pts`}
-              </Button>
-            )}
           </div>
 
-          {/* Packages */}
-          {hasPackages && (
-            <>
-              <h2 className="text-2xl font-bold mb-6">Choose a Package</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {service.packages.map((pkg) => {
-                  const affordable = userBalance >= pkg.pointsCost;
-                  const style = getTierStyle(pkg.tier);
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="glass-panel rounded-xl h-64 animate-pulse" />
+              ))}
+            </div>
+          ) : services.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              No packages found
+            </div>
+          ) : (
+            <div className="space-y-16">
+              {Object.entries(grouped).map(([category, categoryServices]) => (
+                <div key={category}>
+                  {/* Category Header */}
+                  <div className="mb-8">
+                    <Badge variant="secondary" className="mb-2">{category}</Badge>
+                  </div>
 
-                  return (
-                    <div
-                      key={pkg._id}
-                      className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 hover:border-white/30 transition-all ${style.card}`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${style.badge}`}>
-                            {pkg.tier}
-                          </span>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            {pkg.deliveryTime}
+                  <div className="space-y-12">
+                    {categoryServices.map(service => (
+                      <div key={service.id}>
+                        {/* Service Header */}
+                        <div className="flex items-center gap-3 mb-5 pb-3 border-b border-white/10">
+                          <div>
+                            <h2 className="text-xl font-bold">{service.title}</h2>
+                            <p className="text-xs text-muted-foreground">
+                              {service.packages.length} packages available
+                            </p>
                           </div>
                         </div>
 
-                        <div className="text-xs text-muted-foreground mb-3">{pkg.group}</div>
+                        {/* Packages Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {service.packages.map(pkg => {
+                            const affordable = userBalance >= pkg.pointsCost;
+                            const style = getTierStyle(pkg.tier);
 
-                        <div className="text-2xl font-black text-primary mb-4">
-                          {pkg.pointsCost} pts
+                            return (
+                              <div
+                                key={pkg._id}
+                                className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 hover:border-white/30 transition-all ${style.card}`}
+                              >
+                                <div>
+                                  <div className="flex items-center justify-between mb-3">
+                                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${style.badge}`}>
+                                      {pkg.tier}
+                                    </span>
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Clock className="w-3 h-3" />
+                                      {pkg.deliveryTime}
+                                    </div>
+                                  </div>
+
+                                  <div className="text-xs text-muted-foreground mb-3">
+                                    {pkg.group}
+                                  </div>
+
+                                  <div className="text-2xl font-black text-primary mb-4">
+                                    {pkg.pointsCost} pts
+                                  </div>
+
+                                  <ul className="space-y-1.5">
+                                    {pkg.features.map((feat, i) => (
+                                      <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                        <CheckCircle className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />
+                                        {feat}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                <div className="space-y-2 mt-auto">
+                                  {user && !affordable && (
+                                    <p className="text-xs text-destructive text-center font-medium">
+                                      Insufficient balance
+                                    </p>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    className="w-full"
+                                    disabled={!!user && !affordable}
+                                    onClick={() => handleOrder(service, pkg)}
+                                  >
+                                    {!user
+                                      ? "Login to Order"
+                                      : !affordable
+                                      ? "Insufficient Balance"
+                                      : "Order Now"}
+                                  </Button>
+                                  {user && !affordable && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="w-full text-xs underline"
+                                      onClick={() => navigate("/dashboard/wallet")}
+                                    >
+                                      Recharge Wallet
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-
-                        <ul className="space-y-1.5">
-                          {pkg.features.map((feat, i) => (
-                            <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                              <CheckCircle className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />
-                              {feat}
-                            </li>
-                          ))}
-                        </ul>
                       </div>
-
-                      <div className="space-y-2 mt-auto">
-                        {user && !affordable && (
-                          <p className="text-xs text-destructive text-center font-medium">
-                            Insufficient balance
-                          </p>
-                        )}
-                        <Button
-                          size="sm"
-                          className="w-full"
-                          disabled={!!user && !affordable}
-                          onClick={() => handleOrder(pkg)}
-                        >
-                          {!user ? "Login to Order" : !affordable ? "Insufficient Balance" : "Order Now"}
-                        </Button>
-                        {user && !affordable && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="w-full text-xs underline"
-                            onClick={() => navigate("/dashboard/wallet")}
-                          >
-                            Recharge Wallet
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
         </div>
@@ -321,17 +274,10 @@ export default function ServiceDetailPage() {
           <DialogHeader>
             <DialogTitle>Confirm Order</DialogTitle>
             <DialogDescription>
-              {selectedPackage ? (
-                <>
-                  <strong>{selectedPackage.tier} Package</strong> — {selectedPackage.group} for{" "}
-                  <strong>{selectedPackage.pointsCost.toLocaleString()} points</strong>
-                </>
-              ) : (
-                <>
-                  <strong>{service?.title}</strong> for{" "}
-                  <strong>{service?.pointsCost.toLocaleString()} points</strong>
-                </>
-              )}
+              <strong>{selectedOrder?.pkg.tier} Package</strong> —{" "}
+              {selectedOrder?.pkg.group} from{" "}
+              <strong>{selectedOrder?.service.title}</strong> for{" "}
+              <strong>{selectedOrder?.pkg.pointsCost.toLocaleString()} points</strong>
             </DialogDescription>
           </DialogHeader>
           {orderError && (
@@ -341,7 +287,9 @@ export default function ServiceDetailPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirm(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowConfirm(false)}>
+              Cancel
+            </Button>
             <Button onClick={confirmOrder} disabled={isOrdering}>
               {isOrdering ? "Placing order..." : "Confirm Order"}
             </Button>
@@ -358,9 +306,11 @@ export default function ServiceDetailPage() {
             </div>
             <DialogTitle className="text-xl">Order Placed!</DialogTitle>
             <DialogDescription>
-              Aapka order successfully place ho gaya.
+              Aapka <strong>{selectedOrder?.pkg.tier} package</strong> successfully place ho gaya.
             </DialogDescription>
-            <Button onClick={() => navigate("/dashboard/orders")}>View Orders</Button>
+            <Button onClick={() => navigate("/dashboard/orders")}>
+              View Orders
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
