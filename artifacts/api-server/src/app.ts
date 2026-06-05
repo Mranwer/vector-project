@@ -18,6 +18,8 @@ app.use(helmet());
 app.use(cors({
   origin: [
     "https://vector-project-web-app.vercel.app",  // apna actual Vercel URL
+    "https://vectortechnologydigitalservices.com",
+    "https://www.vectortechnologydigitalservices.com",
     "http://localhost:5173",
   ],
   credentials: true,
