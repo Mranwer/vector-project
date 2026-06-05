@@ -23,6 +23,14 @@ import AdminServicesPage from "@/pages/admin/services";
 import AdminOrdersPage from "@/pages/admin/orders";
 import AdminPaymentsPage from "@/pages/admin/payments";
 
+
+// Yeh do lines daalo setAuthTokenGetter ke saath
+setBaseUrl("https://vector-project.onrender.com");
+
+setAuthTokenGetter(() => {
+  return localStorage.getItem("vtds_active_token");
+});
+
 setAuthTokenGetter(() => {
   return localStorage.getItem("vtds_active_token");
 });
