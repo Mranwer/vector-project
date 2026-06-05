@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://vector-project.onrender.com*"
+      "destination": "https://vector-project.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
