@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, ProtectedRoute } from "@/lib/auth";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
 import LoginPage from "@/pages/login";
@@ -23,13 +23,7 @@ import AdminServicesPage from "@/pages/admin/services";
 import AdminOrdersPage from "@/pages/admin/orders";
 import AdminPaymentsPage from "@/pages/admin/payments";
 
-
-// Yeh do lines daalo setAuthTokenGetter ke saath
 setBaseUrl("https://vector-project.onrender.com");
-
-setAuthTokenGetter(() => {
-  return localStorage.getItem("vtds_active_token");
-});
 
 setAuthTokenGetter(() => {
   return localStorage.getItem("vtds_active_token");
