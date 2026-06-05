@@ -21,6 +21,9 @@ import {
   CheckCircle,
   AlertCircle,
   ZapIcon,
+  Image,
+  Video,
+  Youtube,
 } from "lucide-react";
 
 interface ServicePackage {
@@ -51,6 +54,22 @@ interface SelectedOrder {
   pkg: ServicePackage;
 }
 
+// ─── ID to Actual Title Mapping ───────────────────────────────────────────────
+const SERVICE_TITLE_MAP: Record<string, string> = {
+  "6a213c466e51464be4ad63c2": "Thumbnail Design",
+  "6a213c466e51464be4ad63c3": "YouTube Shorts (Under 1 Min)",
+  "6a213c466e51464be4ad63c4": "1–3 Minute Video Editing",
+  "6a213c466e51464be4ad63c5": "1–5 Minute Video Editing",
+};
+
+function getServiceIcon(title: string) {
+  const lower = title.toLowerCase();
+  if (lower.includes("thumbnail")) return <Image className="w-5 h-5 text-primary" />;
+  if (lower.includes("short") || lower.includes("youtube")) return <Youtube className="w-5 h-5 text-primary" />;
+  if (lower.includes("video") || lower.includes("editing")) return <Video className="w-5 h-5 text-primary" />;
+  return <ZapIcon className="w-5 h-5 text-primary" />;
+}
+
 function getTierStyle(tier: string) {
   switch (tier) {
     case "Basic":    return { card: "border-white/10 bg-muted/5",           badge: "bg-muted text-muted-foreground" };
@@ -75,7 +94,6 @@ export default function ServiceDetailPage() {
     fetch("/api/services?limit=100")
       .then(r => r.json())
       .then(data => {
-        // Sirf wahi services jo packages rakhti hain
         const withPackages = (data.services ?? []).filter(
           (s: Service) => s.packages && s.packages.length > 0
         );
@@ -117,7 +135,6 @@ export default function ServiceDetailPage() {
 
   const userBalance = user?.walletBalance ?? 0;
 
-  // Group services by category
   const grouped = services.reduce<Record<string, Service[]>>((acc, svc) => {
     if (!acc[svc.category]) acc[svc.category] = [];
     acc[svc.category].push(svc);
@@ -166,99 +183,110 @@ export default function ServiceDetailPage() {
             <div className="space-y-16">
               {Object.entries(grouped).map(([category, categoryServices]) => (
                 <div key={category}>
-                  {/* Category Header */}
+
+                  {/* Category Badge */}
                   <div className="mb-8">
-                    <Badge variant="secondary" className="mb-2">{category}</Badge>
+                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                      {category}
+                    </Badge>
                   </div>
 
                   <div className="space-y-12">
-                    {categoryServices.map(service => (
-                      <div key={service.id}>
-                        {/* Service Header */}
-                        <div className="flex items-center gap-3 mb-5 pb-3 border-b border-white/10">
-                          <div>
-                            <h2 className="text-xl font-bold">{service.title}</h2>
-                            <p className="text-xs text-muted-foreground">
-                              {service.packages.length} packages available
-                            </p>
+                    {categoryServices.map(service => {
+                      const displayTitle = SERVICE_TITLE_MAP[service.id] || service.title;
+
+                      return (
+                        <div key={service.id}>
+
+                          {/* Service Header */}
+                          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-white/10">
+                            <div className="p-2 rounded-xl bg-primary/10">
+                              {getServiceIcon(displayTitle)}
+                            </div>
+                            <div>
+                              <h2 className="text-xl font-bold">{displayTitle}</h2>
+                              <p className="text-xs text-muted-foreground">
+                                {service.packages.length} packages available
+                              </p>
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Packages Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {service.packages.map(pkg => {
-                            const affordable = userBalance >= pkg.pointsCost;
-                            const style = getTierStyle(pkg.tier);
+                          {/* Packages Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {service.packages.map(pkg => {
+                              const affordable = userBalance >= pkg.pointsCost;
+                              const style = getTierStyle(pkg.tier);
 
-                            return (
-                              <div
-                                key={pkg._id}
-                                className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 hover:border-white/30 transition-all ${style.card}`}
-                              >
-                                <div>
-                                  <div className="flex items-center justify-between mb-3">
-                                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${style.badge}`}>
-                                      {pkg.tier}
-                                    </span>
-                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                      <Clock className="w-3 h-3" />
-                                      {pkg.deliveryTime}
+                              return (
+                                <div
+                                  key={pkg._id}
+                                  className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 hover:border-white/30 transition-all ${style.card}`}
+                                >
+                                  <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${style.badge}`}>
+                                        {pkg.tier}
+                                      </span>
+                                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Clock className="w-3 h-3" />
+                                        {pkg.deliveryTime}
+                                      </div>
                                     </div>
+
+                                    <div className="text-xs text-muted-foreground mb-3">
+                                      {pkg.group}
+                                    </div>
+
+                                    <div className="text-2xl font-black text-primary mb-4">
+                                      {pkg.pointsCost} pts
+                                    </div>
+
+                                    <ul className="space-y-1.5">
+                                      {pkg.features.map((feat, i) => (
+                                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                          <CheckCircle className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />
+                                          {feat}
+                                        </li>
+                                      ))}
+                                    </ul>
                                   </div>
 
-                                  <div className="text-xs text-muted-foreground mb-3">
-                                    {pkg.group}
-                                  </div>
-
-                                  <div className="text-2xl font-black text-primary mb-4">
-                                    {pkg.pointsCost} pts
-                                  </div>
-
-                                  <ul className="space-y-1.5">
-                                    {pkg.features.map((feat, i) => (
-                                      <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                                        <CheckCircle className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />
-                                        {feat}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                <div className="space-y-2 mt-auto">
-                                  {user && !affordable && (
-                                    <p className="text-xs text-destructive text-center font-medium">
-                                      Insufficient balance
-                                    </p>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    className="w-full"
-                                    disabled={!!user && !affordable}
-                                    onClick={() => handleOrder(service, pkg)}
-                                  >
-                                    {!user
-                                      ? "Login to Order"
-                                      : !affordable
-                                      ? "Insufficient Balance"
-                                      : "Order Now"}
-                                  </Button>
-                                  {user && !affordable && (
+                                  <div className="space-y-2 mt-auto">
+                                    {user && !affordable && (
+                                      <p className="text-xs text-destructive text-center font-medium">
+                                        Insufficient balance
+                                      </p>
+                                    )}
                                     <Button
                                       size="sm"
-                                      variant="ghost"
-                                      className="w-full text-xs underline"
-                                      onClick={() => navigate("/dashboard/wallet")}
+                                      className="w-full"
+                                      disabled={!!user && !affordable}
+                                      onClick={() => handleOrder(service, pkg)}
                                     >
-                                      Recharge Wallet
+                                      {!user
+                                        ? "Login to Order"
+                                        : !affordable
+                                        ? "Insufficient Balance"
+                                        : "Order Now"}
                                     </Button>
-                                  )}
+                                    {user && !affordable && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="w-full text-xs underline"
+                                        onClick={() => navigate("/dashboard/wallet")}
+                                      >
+                                        Recharge Wallet
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -276,8 +304,10 @@ export default function ServiceDetailPage() {
             <DialogDescription>
               <strong>{selectedOrder?.pkg.tier} Package</strong> —{" "}
               {selectedOrder?.pkg.group} from{" "}
-              <strong>{selectedOrder?.service.title}</strong> for{" "}
-              <strong>{selectedOrder?.pkg.pointsCost.toLocaleString()} points</strong>
+              <strong>
+                {selectedOrder ? (SERVICE_TITLE_MAP[selectedOrder.service.id] || selectedOrder.service.title) : ""}
+              </strong>{" "}
+              for <strong>{selectedOrder?.pkg.pointsCost.toLocaleString()} points</strong>
             </DialogDescription>
           </DialogHeader>
           {orderError && (
@@ -306,7 +336,11 @@ export default function ServiceDetailPage() {
             </div>
             <DialogTitle className="text-xl">Order Placed!</DialogTitle>
             <DialogDescription>
-              Aapka <strong>{selectedOrder?.pkg.tier} package</strong> successfully place ho gaya.
+              Aapka{" "}
+              <strong>
+                {selectedOrder ? (SERVICE_TITLE_MAP[selectedOrder.service.id] || selectedOrder.service.title) : ""}
+              </strong>{" "}
+              — <strong>{selectedOrder?.pkg.tier} package</strong> successfully place ho gaya.
             </DialogDescription>
             <Button onClick={() => navigate("/dashboard/orders")}>
               View Orders
