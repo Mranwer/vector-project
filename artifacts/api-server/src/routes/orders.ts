@@ -46,7 +46,6 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
         .skip(skip)
         .limit(limit)
         .lean(),
-
       Order.countDocuments(query),
     ]);
 
@@ -70,10 +69,7 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
     });
   } catch (err) {
     req.log.error({ err }, "Get orders error");
-
-    res.status(500).json({
-      error: "Internal server error",
-    });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -82,37 +78,26 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { serviceId, notes } = req.body;
 
-    // Validation
     if (!serviceId) {
-      res.status(400).json({
-        error: "serviceId is required",
-      });
+      res.status(400).json({ error: "serviceId is required" });
       return;
     }
 
-    // Find service and user
     const [service, user] = await Promise.all([
       Service.findById(serviceId),
       User.findById(req.user!.id),
     ]);
 
-    // Service check
     if (!service || service.status !== "active") {
-      res.status(404).json({
-        error: "Service not found or unavailable",
-      });
+      res.status(404).json({ error: "Service not found or unavailable" });
       return;
     }
 
-    // User check
     if (!user) {
-      res.status(404).json({
-        error: "User not found",
-      });
+      res.status(404).json({ error: "User not found" });
       return;
     }
 
-    // Wallet balance check
     const walletBalance = user.walletBalance ?? 0;
     const pointsCost = service.pointsCost ?? 0;
 
@@ -123,12 +108,9 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Deduct balance
     user.walletBalance = walletBalance - pointsCost;
-
     await user.save();
 
-    // Create order
     const order = await Order.create({
       userId: user._id,
       serviceId: service._id,
@@ -140,7 +122,6 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
       deliveryTime: service.deliveryTime,
     });
 
-    // Create transaction
     await Transaction.create({
       userId: user._id,
       type: "debit",
@@ -150,25 +131,25 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
       referenceId: order._id.toString(),
     });
 
-    // Send email (non-blocking)
+    // Email non-blocking
     sendOrderConfirmationEmail(
       user.email,
       user.name,
       service.title,
       order._id.toString()
     ).catch((err) => {
-      console.error("Email send failed:", err);
+      console.error("Email send failed:", err?.message);
     });
 
-    // Success response
     res.status(201).json(formatOrder(order));
-  } catch (err) {
-    console.error("Create order error:", err);
 
+  } catch (err: any) {
+    console.error("=== CREATE ORDER ERROR ===");
+    console.error("Message:", err?.message);
+    console.error("Stack:", err?.stack);
     req.log.error({ err }, "Create order error");
-
     res.status(500).json({
-      error: "Internal server error",
+      error: err?.message || "Internal server error",
     });
   }
 });
@@ -182,19 +163,14 @@ router.get("/orders/:id", requireAuth, async (req: AuthRequest, res: Response) =
     });
 
     if (!order) {
-      res.status(404).json({
-        error: "Order not found",
-      });
+      res.status(404).json({ error: "Order not found" });
       return;
     }
 
     res.json(formatOrder(order));
-  } catch (err) {
-    console.error("Get order error:", err);
-
-    res.status(404).json({
-      error: "Order not found",
-    });
+  } catch (err: any) {
+    console.error("Get order error:", err?.message);
+    res.status(404).json({ error: "Order not found" });
   }
 });
 
