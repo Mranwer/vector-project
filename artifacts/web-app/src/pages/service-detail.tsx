@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useParams } from "wouter";
 import { useCreateOrder } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 
@@ -21,164 +21,62 @@ import {
   CheckCircle,
   AlertCircle,
   ZapIcon,
-  Image,
-  Video,
-  Youtube,
 } from "lucide-react";
 
-// ─── Seed Data (hardcoded — API pe depend nahi) ───────────────────────────────
-
-interface Package {
-  tier: "Basic" | "Standard" | "Advanced";
+interface ServicePackage {
+  _id: string;
+  tier: string;
   group: string;
   pointsCost: number;
   deliveryTime: string;
   features: string[];
-  serviceTitle: string;
+  status: string;
 }
 
-const ALL_PACKAGES: Package[] = [
-  // ── Thumbnail Design ──
-  {
-    serviceTitle: "Thumbnail Design",
-    tier: "Basic",
-    group: "Thumbnail",
-    pointsCost: 20,
-    deliveryTime: "1 day",
-    features: ["1 Thumbnail", "HD Quality", "1 Revision"],
-  },
-  {
-    serviceTitle: "Thumbnail Design",
-    tier: "Standard",
-    group: "Thumbnail",
-    pointsCost: 29,
-    deliveryTime: "2 days",
-    features: ["3 Thumbnails", "Professional Design", "3 Revisions"],
-  },
-  {
-    serviceTitle: "Thumbnail Design",
-    tier: "Advanced",
-    group: "Thumbnail",
-    pointsCost: 39,
-    deliveryTime: "2 days",
-    features: ["5 Thumbnails", "CTR Optimized Design", "Source File Included", "Unlimited Revisions"],
-  },
-
-  // ── YouTube Shorts (Under 1 Min) ──
-  {
-    serviceTitle: "YouTube Shorts (Under 1 Min)",
-    tier: "Basic",
-    group: "Video <1min",
-    pointsCost: 39,
-    deliveryTime: "2 days",
-    features: ["1 Short Video", "Basic Cuts", "Background Music"],
-  },
-  {
-    serviceTitle: "YouTube Shorts (Under 1 Min)",
-    tier: "Standard",
-    group: "Video <1min",
-    pointsCost: 49,
-    deliveryTime: "3 days",
-    features: ["3 Short Videos", "Captions", "Transitions", "Color Correction"],
-  },
-  {
-    serviceTitle: "YouTube Shorts (Under 1 Min)",
-    tier: "Advanced",
-    group: "Video <1min",
-    pointsCost: 69,
-    deliveryTime: "4 days",
-    features: ["5 Short Videos", "Motion Graphics", "Premium Effects", "Unlimited Revisions"],
-  },
-
-  // ── 1–3 Minute Video Editing ──
-  {
-    serviceTitle: "1–3 Minute Video Editing",
-    tier: "Basic",
-    group: "Video 1-3min",
-    pointsCost: 49,
-    deliveryTime: "2 days",
-    features: ["Basic Editing", "Cuts & Trims", "Background Music"],
-  },
-  {
-    serviceTitle: "1–3 Minute Video Editing",
-    tier: "Standard",
-    group: "Video 1-3min",
-    pointsCost: 69,
-    deliveryTime: "3 days",
-    features: ["Transitions", "Captions", "Color Grading", "2 Revisions"],
-  },
-  {
-    serviceTitle: "1–3 Minute Video Editing",
-    tier: "Advanced",
-    group: "Video 1-3min",
-    pointsCost: 79,
-    deliveryTime: "5 days",
-    features: ["Motion Graphics", "Sound Design", "Premium Effects", "Unlimited Revisions"],
-  },
-
-  // ── 1–5 Minute Video Editing ──
-  {
-    serviceTitle: "1–5 Minute Video Editing",
-    tier: "Basic",
-    group: "Video 1-5min",
-    pointsCost: 59,
-    deliveryTime: "3 days",
-    features: ["Basic Editing", "Cuts & Trims", "Background Music"],
-  },
-  {
-    serviceTitle: "1–5 Minute Video Editing",
-    tier: "Standard",
-    group: "Video 1-5min",
-    pointsCost: 79,
-    deliveryTime: "5 days",
-    features: ["Transitions", "Captions", "Color Grading", "2 Revisions"],
-  },
-  {
-    serviceTitle: "1–5 Minute Video Editing",
-    tier: "Advanced",
-    group: "Video 1-5min",
-    pointsCost: 99,
-    deliveryTime: "7 days",
-    features: ["Motion Graphics", "Sound Design", "Premium Effects", "Unlimited Revisions"],
-  },
-];
-
-// Group by serviceTitle
-const GROUPED = ALL_PACKAGES.reduce<Record<string, Package[]>>((acc, pkg) => {
-  if (!acc[pkg.serviceTitle]) acc[pkg.serviceTitle] = [];
-  acc[pkg.serviceTitle].push(pkg);
-  return acc;
-}, {});
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getServiceIcon(name: string) {
-  const lower = name.toLowerCase();
-  if (lower.includes("thumbnail")) return <Image className="w-5 h-5 text-primary" />;
-  if (lower.includes("channel")) return <Youtube className="w-5 h-5 text-primary" />;
-  if (lower.includes("video") || lower.includes("editing") || lower.includes("short")) return <Video className="w-5 h-5 text-primary" />;
-  return <ZapIcon className="w-5 h-5 text-primary" />;
+interface Service {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail?: string;
+  pointsCost: number;
+  deliveryTime: string;
+  category: string;
+  subcategory: string;
+  features: string[];
+  packages: ServicePackage[];
 }
 
 function getTierStyle(tier: string) {
   switch (tier) {
-    case "Basic":    return { card: "border-white/10 bg-muted/5",          badge: "bg-muted text-muted-foreground" };
-    case "Standard": return { card: "border-blue-500/30 bg-blue-500/5",    badge: "bg-blue-500/20 text-blue-400" };
+    case "Basic":    return { card: "border-white/10 bg-muted/5",           badge: "bg-muted text-muted-foreground" };
+    case "Standard": return { card: "border-blue-500/30 bg-blue-500/5",     badge: "bg-blue-500/20 text-blue-400" };
     case "Advanced": return { card: "border-purple-500/30 bg-purple-500/5", badge: "bg-purple-500/20 text-purple-400" };
-    default:         return { card: "border-white/10 bg-muted/5",          badge: "bg-muted text-muted-foreground" };
+    default:         return { card: "border-white/10 bg-muted/5",           badge: "bg-muted text-muted-foreground" };
   }
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export default function ServiceDetailsPage() {
+export default function ServiceDetailPage() {
+  const { id } = useParams();
   const [, navigate] = useLocation();
   const { user } = useAuth();
 
-  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [service, setService] = useState<Service | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedPackage, setSelectedPackage] = useState<ServicePackage | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/services/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        setService(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [id]);
 
   const { mutate: placeOrder, isPending: isOrdering } = useCreateOrder({
     mutation: {
@@ -193,25 +91,71 @@ export default function ServiceDetailsPage() {
     },
   });
 
-  const handleOrder = (pkg: Package) => {
+  const handleOrder = (pkg: ServicePackage) => {
     if (!user) { navigate("/login"); return; }
     setSelectedPackage(pkg);
     setOrderError("");
     setShowConfirm(true);
   };
 
-  const confirmOrder = () => {
-    if (!selectedPackage) return;
-    placeOrder({
-      data: {
-        serviceId: selectedPackage.serviceTitle, // fallback — ya aap actual serviceId pass kar sakte ho
-        selectedServiceName: `${selectedPackage.tier} - ${selectedPackage.group}`,
-        pointsCost: selectedPackage.pointsCost,
-      },
-    });
+  const handleOrderDirect = () => {
+    if (!user) { navigate("/login"); return; }
+    if (!service) return;
+    setSelectedPackage(null);
+    setOrderError("");
+    setShowConfirm(true);
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  const confirmOrder = () => {
+    if (!service) return;
+
+    if (selectedPackage) {
+      // Package order — package ki _id use karo
+      placeOrder({
+        data: {
+          serviceId: service.id,
+          packageId: selectedPackage._id,
+          notes: `${selectedPackage.tier} - ${selectedPackage.group}`,
+        },
+      });
+    } else {
+      // Direct service order
+      placeOrder({
+        data: {
+          serviceId: service.id,
+        },
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="pt-24 pb-20 px-4">
+          <div className="container mx-auto max-w-6xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="glass-panel rounded-xl h-64 animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (!service) {
+    return (
+      <PublicLayout>
+        <div className="pt-24 text-center text-muted-foreground">
+          Service not found.
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  const userBalance = user?.walletBalance ?? 0;
+  const hasPackages = service.packages && service.packages.length > 0;
 
   return (
     <PublicLayout>
@@ -226,125 +170,147 @@ export default function ServiceDetailsPage() {
             </Button>
           </Link>
 
-          {/* Page Heading */}
+          {/* Service Header */}
           <div className="mb-10">
-            <h1 className="text-3xl font-bold mb-2">All Service Packages</h1>
-            <p className="text-muted-foreground text-sm">
-              Apni zaroorat ke hisaab se koi bhi package choose karo
-            </p>
+            {service.thumbnail && (
+              <img
+                src={service.thumbnail}
+                alt={service.title}
+                className="w-full max-h-64 object-cover rounded-2xl mb-6"
+              />
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <Badge variant="secondary">{service.category}</Badge>
+              <Badge variant="outline">{service.subcategory}</Badge>
+            </div>
+
+            <h1 className="text-3xl font-bold mb-2">{service.title}</h1>
+
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+              <span className="flex items-center gap-1">
+                <ZapIcon className="w-4 h-4 text-primary" />
+                <strong className="text-primary">{service.pointsCost.toLocaleString()} pts</strong>
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                {service.deliveryTime}
+              </span>
+            </div>
+
+            <div className="text-muted-foreground text-sm leading-relaxed mb-4">
+              {service.description.split('\n').map((line, i) => (
+                <p key={i} className="mb-1">{line}</p>
+              ))}
+            </div>
+
+            {service.features.length > 0 && (
+              <ul className="space-y-1.5 mb-6">
+                {service.features.map((feat, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+            )}
+
             {user && (
-              <div className="inline-flex items-center gap-2 mt-4 text-sm bg-primary/5 border border-primary/10 rounded-xl px-4 py-2">
+              <div className="inline-flex items-center gap-2 text-sm bg-primary/5 border border-primary/10 rounded-xl px-4 py-2 mb-6">
                 <ZapIcon className="w-4 h-4 text-primary" />
                 <span className="text-muted-foreground">Your Balance:</span>
-                <strong className="text-primary">{user.walletBalance?.toLocaleString() ?? 0} pts</strong>
+                <strong className="text-primary">{userBalance.toLocaleString()} pts</strong>
               </div>
+            )}
+
+            {/* Direct order button (no packages) */}
+            {!hasPackages && (
+              <Button
+                size="lg"
+                disabled={!!user && userBalance < service.pointsCost}
+                onClick={handleOrderDirect}
+              >
+                {!user
+                  ? "Login to Order"
+                  : userBalance < service.pointsCost
+                  ? "Insufficient Balance"
+                  : `Order Now — ${service.pointsCost.toLocaleString()} pts`}
+              </Button>
             )}
           </div>
 
-          {/* ── All Services + Packages ─────────────────────────────────── */}
-          <div className="space-y-12">
-            {Object.entries(GROUPED).map(([serviceTitle, packages]) => (
-              <div key={serviceTitle}>
+          {/* Packages */}
+          {hasPackages && (
+            <>
+              <h2 className="text-2xl font-bold mb-6">Choose a Package</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {service.packages.map((pkg) => {
+                  const affordable = userBalance >= pkg.pointsCost;
+                  const style = getTierStyle(pkg.tier);
 
-                {/* Service Header */}
-                <div className="flex items-center gap-3 mb-5 pb-3 border-b border-white/10">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    {getServiceIcon(serviceTitle)}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">{serviceTitle}</h2>
-                    <p className="text-xs text-muted-foreground">
-                      {packages.length} packages available
-                    </p>
-                  </div>
-                </div>
-
-                {/* Packages Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {packages.map((pkg, idx) => {
-                    const userBalance = user?.walletBalance ?? 0;
-                    const affordable = pkg.pointsCost === 0 || userBalance >= pkg.pointsCost;
-                    const style = getTierStyle(pkg.tier);
-
-                    return (
-                      <div
-                        key={idx}
-                        className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 hover:border-white/30 transition-all ${style.card}`}
-                      >
-                        <div>
-                          {/* Tier badge + Delivery */}
-                          <div className="flex items-center justify-between mb-3">
-                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${style.badge}`}>
-                              {pkg.tier}
-                            </span>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3" />
-                              {pkg.deliveryTime}
-                            </div>
+                  return (
+                    <div
+                      key={pkg._id}
+                      className={`rounded-2xl border p-5 flex flex-col justify-between gap-4 hover:border-white/30 transition-all ${style.card}`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${style.badge}`}>
+                            {pkg.tier}
+                          </span>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            {pkg.deliveryTime}
                           </div>
-
-                          {/* Group */}
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
-                            {getServiceIcon(serviceTitle)}
-                            <span>{pkg.group}</span>
-                          </div>
-
-                          {/* Price */}
-                          <div className="text-2xl font-black text-primary mb-4">
-                            {pkg.pointsCost === 0 ? "Free" : `${pkg.pointsCost} pts`}
-                          </div>
-
-                          {/* Features */}
-                          <ul className="space-y-1.5">
-                            {pkg.features.map((feat, fIdx) => (
-                              <li key={fIdx} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                                <CheckCircle className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />
-                                <span>{feat}</span>
-                              </li>
-                            ))}
-                          </ul>
                         </div>
 
-                        {/* CTA */}
-                        <div className="space-y-2 mt-auto">
-                          {user && !affordable && (
-                            <p className="text-xs text-destructive text-center font-medium">
-                              Insufficient balance
-                            </p>
-                          )}
+                        <div className="text-xs text-muted-foreground mb-3">{pkg.group}</div>
+
+                        <div className="text-2xl font-black text-primary mb-4">
+                          {pkg.pointsCost} pts
+                        </div>
+
+                        <ul className="space-y-1.5">
+                          {pkg.features.map((feat, i) => (
+                            <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                              <CheckCircle className="w-3 h-3 text-green-500 shrink-0 mt-0.5" />
+                              {feat}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="space-y-2 mt-auto">
+                        {user && !affordable && (
+                          <p className="text-xs text-destructive text-center font-medium">
+                            Insufficient balance
+                          </p>
+                        )}
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          disabled={!!user && !affordable}
+                          onClick={() => handleOrder(pkg)}
+                        >
+                          {!user ? "Login to Order" : !affordable ? "Insufficient Balance" : "Order Now"}
+                        </Button>
+                        {user && !affordable && (
                           <Button
                             size="sm"
-                            className="w-full"
-                            variant={pkg.pointsCost === 0 ? "outline" : "default"}
-                            disabled={!!user && !affordable}
-                            onClick={() => handleOrder(pkg)}
+                            variant="ghost"
+                            className="w-full text-xs underline"
+                            onClick={() => navigate("/dashboard/wallet")}
                           >
-                            {!user
-                              ? "Login to Order"
-                              : !affordable
-                              ? "Insufficient Balance"
-                              : pkg.pointsCost === 0
-                              ? "Get for Free"
-                              : "Order Now"}
+                            Recharge Wallet
                           </Button>
-                          {user && !affordable && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="w-full text-xs underline"
-                              onClick={() => navigate("/dashboard/wallet")}
-                            >
-                              Recharge Wallet
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
         </div>
       </section>
@@ -355,14 +321,17 @@ export default function ServiceDetailsPage() {
           <DialogHeader>
             <DialogTitle>Confirm Order</DialogTitle>
             <DialogDescription>
-              Aap order karne wale hain{" "}
-              <strong>{selectedPackage?.tier} Package ({selectedPackage?.group})</strong>{" "}
-              from <strong>{selectedPackage?.serviceTitle}</strong> for{" "}
-              <strong>
-                {selectedPackage?.pointsCost === 0
-                  ? "Free"
-                  : `${selectedPackage?.pointsCost?.toLocaleString()} points`}
-              </strong>.
+              {selectedPackage ? (
+                <>
+                  <strong>{selectedPackage.tier} Package</strong> — {selectedPackage.group} for{" "}
+                  <strong>{selectedPackage.pointsCost.toLocaleString()} points</strong>
+                </>
+              ) : (
+                <>
+                  <strong>{service?.title}</strong> for{" "}
+                  <strong>{service?.pointsCost.toLocaleString()} points</strong>
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           {orderError && (
@@ -389,7 +358,7 @@ export default function ServiceDetailsPage() {
             </div>
             <DialogTitle className="text-xl">Order Placed!</DialogTitle>
             <DialogDescription>
-              Aapka <strong>{selectedPackage?.tier} package</strong> successfully place ho gaya.
+              Aapka order successfully place ho gaya.
             </DialogDescription>
             <Button onClick={() => navigate("/dashboard/orders")}>View Orders</Button>
           </div>
