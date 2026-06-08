@@ -8,13 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Zap, TrendingUp, TrendingDown, AlertCircle, Plus, Star, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
- 
+
 declare global {
   interface Window {
     Razorpay: new (options: Record<string, unknown>) => { open(): void };
   }
 }
- 
+
 function loadRazorpay(): Promise<void> {
   return new Promise((resolve) => {
     if (window.Razorpay) { resolve(); return; }
@@ -24,7 +24,7 @@ function loadRazorpay(): Promise<void> {
     document.body.appendChild(s);
   });
 }
- 
+
 interface Package {
   id: string;
   name: string;
@@ -34,7 +34,7 @@ interface Package {
   color: string;
   description: string;
 }
- 
+
 const PACKAGES: Package[] = [
   {
     id: "package1",
@@ -78,7 +78,7 @@ const PACKAGES: Package[] = [
     description: "Ultimate access, best deal",
   },
 ];
- 
+
 export default function WalletPage() {
   const { user } = useAuth();
   const { data: wallet, isLoading: walletLoading, refetch: refetchWallet } = useGetWallet();
@@ -87,7 +87,7 @@ export default function WalletPage() {
   const [rechargeError, setRechargeError] = useState("");
   const [showRecharge, setShowRecharge] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
- 
+
   const { mutate: createOrder } = useCreateRechargeOrder({
     mutation: {
       async onSuccess(order) {
@@ -122,7 +122,7 @@ export default function WalletPage() {
       },
     },
   });
- 
+
   const { mutate: verifyPayment } = useVerifyRecharge({
     mutation: {
       onSuccess() {
@@ -135,7 +135,7 @@ export default function WalletPage() {
       },
     },
   });
- 
+
   const handleRecharge = () => {
     if (!selectedPackage) {
       setRechargeError("Please select a package");
@@ -145,9 +145,9 @@ export default function WalletPage() {
     setIsProcessing(true);
     createOrder({ data: { amount: selectedPackage.price } });
   };
- 
+
   const transactions = txData?.transactions ?? [];
- 
+
   return (
     <div className="min-h-screen flex">
       <Sidebar />
@@ -157,7 +157,7 @@ export default function WalletPage() {
             <h1 className="text-2xl font-bold">Wallet</h1>
             <p className="text-muted-foreground mt-1">Manage your points balance</p>
           </div>
- 
+
           {/* Balance Card */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Card className="glass-panel border-primary/20">
@@ -181,17 +181,19 @@ export default function WalletPage() {
                 </Button>
               </CardContent>
             </Card>
- 
+
             <Card className="glass-panel">
               <CardContent className="p-6 space-y-4">
                 <p className="text-muted-foreground text-sm font-medium">Quick Stats</p>
                 {txLoading ? (
+                  // ✅ FIX: Fragment hataya, directly array return kiya with key
                   Array.from({ length: 2 }).map((_, i) => (
                     <Skeleton key={i} className="h-8 w-full" />
                   ))
                 ) : (
-                  <>
-                    <div className="flex items-center justify-between">
+                  // ✅ FIX: Fragment ke andar key wale divs
+                  <div className="space-y-4">
+                    <div key="recharged" className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-sm text-muted-foreground">
                         <TrendingUp className="w-4 h-4 text-green-400" /> Total Recharged
                       </span>
@@ -204,7 +206,7 @@ export default function WalletPage() {
                         pts
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div key="spent" className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-sm text-muted-foreground">
                         <TrendingDown className="w-4 h-4 text-red-400" /> Total Spent
                       </span>
@@ -217,12 +219,12 @@ export default function WalletPage() {
                         pts
                       </span>
                     </div>
-                  </>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </div>
- 
+
           {/* Transaction History */}
           <Card className="glass-panel">
             <CardHeader>
@@ -290,7 +292,7 @@ export default function WalletPage() {
           </Card>
         </div>
       </main>
- 
+
       {/* Recharge Dialog */}
       <Dialog
         open={showRecharge}
@@ -309,7 +311,7 @@ export default function WalletPage() {
               Select a recharge package to add points to your wallet.
             </DialogDescription>
           </DialogHeader>
- 
+
           <div className="space-y-4">
             {rechargeError && (
               <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
@@ -317,13 +319,13 @@ export default function WalletPage() {
                 {rechargeError}
               </div>
             )}
- 
+
             {/* Package Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {PACKAGES.map((pkg) => {
                 const isSelected = selectedPackage?.id === pkg.id;
                 const valuePerRupee = (pkg.points / pkg.price).toFixed(2);
- 
+
                 return (
                   <button
                     key={pkg.id}
@@ -336,7 +338,6 @@ export default function WalletPage() {
                       ${pkg.popular ? "sm:col-span-2" : ""}
                     `}
                   >
-                    {/* Popular badge */}
                     {pkg.popular && (
                       <span className="absolute -top-3 left-1/2 -translate-x-1/2">
                         <Badge className="bg-primary text-primary-foreground gap-1 px-3 py-0.5 text-xs">
@@ -344,13 +345,13 @@ export default function WalletPage() {
                         </Badge>
                       </span>
                     )}
- 
+
                     <div className={`flex items-center justify-between ${pkg.popular ? "sm:flex-row" : "flex-col items-start gap-2"}`}>
                       <div>
                         <p className="font-semibold text-sm">{pkg.name}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{pkg.description}</p>
                       </div>
- 
+
                       <div className={`${pkg.popular ? "text-right" : "w-full"}`}>
                         <div className="flex items-baseline gap-1.5 flex-wrap">
                           <span className="text-2xl font-bold text-primary">
@@ -362,8 +363,7 @@ export default function WalletPage() {
                         <p className="text-xs text-muted-foreground">{valuePerRupee} pts/₹</p>
                       </div>
                     </div>
- 
-                    {/* Selected checkmark */}
+
                     {isSelected && (
                       <div className="absolute top-3 right-3 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                         <Check className="w-3 h-3 text-primary-foreground" />
@@ -373,7 +373,7 @@ export default function WalletPage() {
                 );
               })}
             </div>
- 
+
             {/* Summary & Pay */}
             <div className="border-t border-white/10 pt-4 space-y-3">
               {selectedPackage ? (
@@ -388,7 +388,7 @@ export default function WalletPage() {
                   Select a package above to continue
                 </p>
               )}
- 
+
               <Button
                 className="w-full"
                 onClick={handleRecharge}

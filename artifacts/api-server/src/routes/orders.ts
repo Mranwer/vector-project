@@ -76,10 +76,17 @@ router.get("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
 // POST /api/orders
 router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { serviceId, notes } = req.body;
+    // ✅ FIX: packageId bhi ab accept hoga
+    const { serviceId, packageId, notes } = req.body;
 
     if (!serviceId) {
       res.status(400).json({ error: "serviceId is required" });
+      return;
+    }
+
+    // ✅ packageId bhi required hai ab
+    if (!packageId) {
+      res.status(400).json({ error: "packageId is required" });
       return;
     }
 
@@ -98,8 +105,19 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    // ✅ FIX: Selected package dhundo service ke andar
+    const selectedPackage = service.packages?.find(
+      (pkg: any) => pkg._id.toString() === packageId
+    );
+
+    if (!selectedPackage) {
+      res.status(404).json({ error: "Package not found in this service" });
+      return;
+    }
+
+    // ✅ FIX: Ab service.pointsCost nahi, selectedPackage.pointsCost use hoga
     const walletBalance = user.walletBalance ?? 0;
-    const pointsCost = service.pointsCost ?? 0;
+    const pointsCost = selectedPackage.pointsCost ?? 0;
 
     if (walletBalance < pointsCost) {
       res.status(400).json({
@@ -116,17 +134,17 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
       serviceId: service._id,
       serviceName: service.title,
       serviceCategory: service.category,
-      pointsCost: service.pointsCost,
+      pointsCost: pointsCost,                          // ✅ Package ka actual cost
       status: "pending",
-      notes: notes || undefined,
-      deliveryTime: service.deliveryTime,
+      notes: notes || `${selectedPackage.tier} - ${selectedPackage.group}`,
+      deliveryTime: selectedPackage.deliveryTime || service.deliveryTime, // ✅ Package delivery time
     });
 
     await Transaction.create({
       userId: user._id,
       type: "debit",
-      amount: service.pointsCost,
-      description: `Purchased: ${service.title}`,
+      amount: pointsCost,
+      description: `Purchased: ${service.title} (${selectedPackage.tier} - ${selectedPackage.group})`,
       status: "success",
       referenceId: order._id.toString(),
     });
@@ -135,7 +153,7 @@ router.post("/orders", requireAuth, async (req: AuthRequest, res: Response) => {
     sendOrderConfirmationEmail(
       user.email,
       user.name,
-      service.title,
+      `${service.title} - ${selectedPackage.tier}`,
       order._id.toString()
     ).catch((err) => {
       console.error("Email send failed:", err?.message);

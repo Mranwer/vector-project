@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useCreateOrder } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
 
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -54,7 +53,6 @@ interface SelectedOrder {
   pkg: ServicePackage;
 }
 
-// ─── ID to Actual Title Mapping ───────────────────────────────────────────────
 const SERVICE_TITLE_MAP: Record<string, string> = {
   "6a213c466e51464be4ad63c2": "Thumbnail Design",
   "6a213c466e51464be4ad63c3": "YouTube Shorts (Under 1 Min)",
@@ -89,6 +87,7 @@ export default function ServiceDetailPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [isOrdering, setIsOrdering] = useState(false);
 
   useEffect(() => {
     fetch("/api/services?limit=100")
@@ -103,19 +102,6 @@ export default function ServiceDetailPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const { mutate: placeOrder, isPending: isOrdering } = useCreateOrder({
-    mutation: {
-      onSuccess() {
-        setShowConfirm(false);
-        setOrderSuccess(true);
-      },
-      onError(err: unknown) {
-        const e = err as { data?: { error?: string }; message?: string };
-        setOrderError(e?.data?.error ?? e?.message ?? "Order failed");
-      },
-    },
-  });
-
   const handleOrder = (service: Service, pkg: ServicePackage) => {
     if (!user) { navigate("/login"); return; }
     setSelectedOrder({ service, pkg });
@@ -123,14 +109,41 @@ export default function ServiceDetailPage() {
     setShowConfirm(true);
   };
 
-  const confirmOrder = () => {
+  const confirmOrder = async () => {
     if (!selectedOrder) return;
-    placeOrder({
-      data: {
-        serviceId: selectedOrder.service.id,
-        notes: `${selectedOrder.pkg.tier} - ${selectedOrder.pkg.group}`,
-      },
-    });
+    setIsOrdering(true);
+
+    // ✅ vtds_active_token se JWT token lo
+    const token = localStorage.getItem("vtds_active_token");
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          serviceId: selectedOrder.service.id,
+          packageId: selectedOrder.pkg._id,
+          notes: `${selectedOrder.pkg.tier} - ${selectedOrder.pkg.group}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setOrderError(data?.error ?? "Order failed");
+        return;
+      }
+
+      setShowConfirm(false);
+      setOrderSuccess(true);
+    } catch {
+      setOrderError("Network error. Please try again.");
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   const userBalance = user?.walletBalance ?? 0;
@@ -146,7 +159,6 @@ export default function ServiceDetailPage() {
       <section className="pt-24 pb-20 px-4">
         <div className="container mx-auto max-w-6xl">
 
-          {/* Back */}
           <Link href="/services">
             <Button variant="ghost" className="mb-8 gap-2">
               <ArrowLeft className="w-4 h-4" />
@@ -154,7 +166,6 @@ export default function ServiceDetailPage() {
             </Button>
           </Link>
 
-          {/* Heading */}
           <div className="mb-10">
             <h1 className="text-3xl font-bold mb-2">All Service Packages</h1>
             <p className="text-muted-foreground text-sm">
@@ -183,8 +194,6 @@ export default function ServiceDetailPage() {
             <div className="space-y-16">
               {Object.entries(grouped).map(([category, categoryServices]) => (
                 <div key={category}>
-
-                  {/* Category Badge */}
                   <div className="mb-8">
                     <Badge variant="secondary" className="text-sm px-3 py-1">
                       {category}
@@ -197,8 +206,6 @@ export default function ServiceDetailPage() {
 
                       return (
                         <div key={service.id}>
-
-                          {/* Service Header */}
                           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-white/10">
                             <div className="p-2 rounded-xl bg-primary/10">
                               {getServiceIcon(displayTitle)}
@@ -211,7 +218,6 @@ export default function ServiceDetailPage() {
                             </div>
                           </div>
 
-                          {/* Packages Grid */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {service.packages.map(pkg => {
                               const affordable = userBalance >= pkg.pointsCost;
@@ -292,7 +298,6 @@ export default function ServiceDetailPage() {
               ))}
             </div>
           )}
-
         </div>
       </section>
 
@@ -317,7 +322,7 @@ export default function ServiceDetailPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirm(false)}>
+            <Button variant="outline" onClick={() => setShowConfirm(false)} disabled={isOrdering}>
               Cancel
             </Button>
             <Button onClick={confirmOrder} disabled={isOrdering}>

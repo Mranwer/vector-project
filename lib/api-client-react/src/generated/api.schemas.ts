@@ -277,6 +277,7 @@ export interface Category {
 
 export interface OrderInput {
   serviceId: string;
+  packageId?: string;  // ← yeh add karo
   notes?: string;
 }
 
