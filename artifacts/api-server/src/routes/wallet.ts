@@ -97,7 +97,7 @@ router.get("/wallet/transactions", requireAuth, async (req: AuthRequest, res: Re
 ========================= */
 router.post("/wallet/recharge/order", requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { amount } = req.body;
+    const { amount,points } = req.body;
 
     if (!amount || amount < 10) {
       return res.status(400).json({ error: "Minimum recharge is ₹10" });
@@ -111,13 +111,13 @@ router.post("/wallet/recharge/order", requireAuth, async (req: AuthRequest, res:
       receipt: `rcpt_${Date.now()}`,
     });
 
-    await Payment.create({
-      userId: req.user!.id,
-      amount,
-      pointsAdded: amount,
-      razorpayOrderId: order.id,
-      status: "created",
-    });
+await Payment.create({
+  userId: req.user!.id,
+  amount,
+  pointsAdded: points,   // ✅ rupees nahi, actual points save honge
+  razorpayOrderId: order.id,
+  status: "created",
+});
 
     res.json({
       orderId: order.id,

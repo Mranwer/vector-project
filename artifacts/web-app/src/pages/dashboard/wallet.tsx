@@ -64,7 +64,7 @@ const PACKAGES: Package[] = [
   {
     id: "package4",
     name: "Package 4",
-    price: 3299,
+    price: 3499,
     points: 1600,
     color: "border-purple-300 dark:border-purple-700",
     description: "Maximum value for power users",
@@ -143,7 +143,7 @@ export default function WalletPage() {
     }
     setRechargeError("");
     setIsProcessing(true);
-    createOrder({ data: { amount: selectedPackage.price } });
+    createOrder({ data: { amount: selectedPackage.price, points: selectedPackage.points } });
   };
 
   const transactions = txData?.transactions ?? [];
@@ -304,7 +304,7 @@ export default function WalletPage() {
           }
         }}
       >
-        <DialogContent className="glass-panel border-white/10 max-w-2xl">
+        <DialogContent className="glass-panel border-white/10 max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Choose a Package</DialogTitle>
             <DialogDescription>
