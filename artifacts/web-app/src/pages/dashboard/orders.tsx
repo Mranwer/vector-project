@@ -88,7 +88,7 @@ export default function OrdersPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap mb-1">
-                          <h3 className="font-semibold">{order.serviceName ?? "Service Order"}</h3>
+                          <h3 className="font-semibold">{order.notes ?? "Service Order"}</h3>
                           <span className={`text-xs px-2 py-0.5 rounded-full border font-medium capitalize ${STATUS_STYLES[order.status ?? ""] ?? "bg-muted/30 text-muted-foreground"}`}>
                             {order.status}
                           </span>
@@ -109,9 +109,9 @@ export default function OrdersPage() {
                             </span>
                           )}
                         </div>
-                        {order.notes && (
+                        {/* {order.notes && (
                           <p className="text-sm text-muted-foreground mt-2 bg-white/5 rounded p-2">{order.notes}</p>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </CardContent>

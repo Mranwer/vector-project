@@ -93,6 +93,7 @@ function Router() {
           <AdminServicesPage />
         </ProtectedRoute>
       </Route>
+      
       <Route path="/admin/orders">
         <ProtectedRoute requireAdmin>
           <AdminOrdersPage />

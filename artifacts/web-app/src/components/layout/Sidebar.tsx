@@ -15,7 +15,8 @@ import {
   Zap,
   Users,
   Briefcase,
-  CreditCard
+  CreditCard,
+  Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -90,7 +91,6 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
             <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
               <Zap className="w-5 h-5" />
             </div>
-        
             <span className="font-bold text-lg tracking-tight">Vector Technology {isAdmin && <span className="text-primary text-xs ml-1 bg-primary/10 px-1 py-0.5 rounded">ADMIN</span>}</span>
           </Link>
 

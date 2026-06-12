@@ -3,14 +3,17 @@ import { Service } from "./models/Service";
 // Har service ke title ke saath uske packages match kiye hain
 const packagesData: Record<string, Array<{
   tier: "Basic" | "Standard" | "Advanced" | "Premium";
-  group: "Thumbnail" | "Video <1min" | "Video 1-3min" | "Video 1-5min" | "Channel Setup" | "SEO" | "Video Editing" | "Consultation" | "Landing Page" | "Full Stack" | "E-Commerce" | "Mobile App" | "SEO Audit" | "Campaign Setup" | "Ad Creatives" | "Ads Management" | "Pixel Setup" | "Ads Audit";
+  group: "Thumbnail" | "Video <1min" | "Video 1-3min" | "Video 1-5min" | "Channel Setup" | "SEO" | "Video Editing" | "Consultation" | "Landing Page" | "Full Stack" | "E-Commerce" | "Mobile App" | "SEO Audit" | "Campaign Setup" | "Ad Creatives" | "Ads Management" | "Pixel Setup" | "Ads Audit" | "Video Upload"|"Channel Creation";
   pointsCost: number;
   deliveryTime: string;
   features: string[];
   status: "active" | "inactive";
+  order?: number;
 }>> = {
 
   // ═══ YOUTUBE SERVICES ═══
+
+ 
 
   "Thumbnail Design": [
   {
@@ -24,6 +27,7 @@ const packagesData: Record<string, Array<{
       "1 Revision"
     ],
     status: "active",
+    order: 1,
   },
   {
     tier: "Standard",
@@ -36,6 +40,7 @@ const packagesData: Record<string, Array<{
       "3 Revisions"
     ],
     status: "active",
+    order: 1,
   },
   {
     tier: "Advanced",
@@ -49,6 +54,7 @@ const packagesData: Record<string, Array<{
       "Unlimited Revisions"
     ],
     status: "active",
+    order: 1,
   },
 
 ],
@@ -65,6 +71,7 @@ const packagesData: Record<string, Array<{
       "Background Music"
     ],
     status: "active",
+    order: 2,
   },
   {
     tier: "Standard",
@@ -78,6 +85,7 @@ const packagesData: Record<string, Array<{
       "Color Correction"
     ],
     status: "active",
+    order: 2,
   },
   {
     tier: "Advanced",
@@ -91,6 +99,7 @@ const packagesData: Record<string, Array<{
       "Unlimited Revisions"
     ],
     status: "active",
+    order: 2,
   },
 ],
 
@@ -106,6 +115,7 @@ const packagesData: Record<string, Array<{
       "Background Music"
     ],
     status: "active",
+    order: 3,
   },
   {
     tier: "Standard",
@@ -119,6 +129,7 @@ const packagesData: Record<string, Array<{
       "2 Revisions"
     ],
     status: "active",
+    order: 3,
   },
   {
     tier: "Advanced",
@@ -132,6 +143,7 @@ const packagesData: Record<string, Array<{
       "Unlimited Revisions"
     ],
     status: "active",
+    order: 3,
   },
 ],
 
@@ -147,6 +159,7 @@ const packagesData: Record<string, Array<{
       "Background Music"
     ],
     status: "active",
+    order: 4,
   },
   {
     tier: "Standard",
@@ -160,6 +173,7 @@ const packagesData: Record<string, Array<{
       "2 Revisions"
     ],
     status: "active",
+    order: 4,
   },
   {
     tier: "Advanced",
@@ -173,6 +187,40 @@ const packagesData: Record<string, Array<{
       "Unlimited Revisions"
     ],
     status: "active",
+    order: 4,
+  },
+],
+ "Video Upload Service": [
+  {
+    tier: "Basic",
+    group: "Video Upload",
+    pointsCost: 10,
+    deliveryTime: "Same Day",
+    features: [
+      "Video Upload",
+      "Title Setup",
+      "Description Setup",
+      "Tags Added"
+    ],
+    status: "active",
+    order: 5
+  },
+],
+
+"YouTube Channel Creation": [
+  {
+    tier: "Basic",
+    group: "Channel Creation",
+    pointsCost: 1,
+    deliveryTime: "Same Day",
+    features: [
+      "Channel Creation",
+      "Basic Setup",
+      "Profile Configuration",
+      "Channel Ready"
+    ],
+    status: "active",
+    order: 6
   },
 ],
 };

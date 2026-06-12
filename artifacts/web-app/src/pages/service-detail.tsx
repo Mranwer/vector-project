@@ -54,10 +54,21 @@ interface SelectedOrder {
 }
 
 const SERVICE_TITLE_MAP: Record<string, string> = {
-  "6a213c466e51464be4ad63c2": "Thumbnail Design",
-  "6a213c466e51464be4ad63c3": "YouTube Shorts (Under 1 Min)",
-  "6a213c466e51464be4ad63c4": "1–3 Minute Video Editing",
-  "6a213c466e51464be4ad63c5": "1–5 Minute Video Editing",
+  "6a2bce77e22a649273d0c08d": "Thumbnail Design",
+  "6a2bce77e22a649273d0c08e": "YouTube Shorts (Under 1 Min)",
+  "6a2bce77e22a649273d0c08f": "1–3 Minute Video Editing",
+  "6a2bce77e22a649273d0c090": "1–5 Minute Video Editing",
+  "6a2bce77e22a649273d0c08b": "Video Upload Service",
+  "6a2bce77e22a649273d0c08c": "YouTube Channel Creation",
+};
+
+const SERVICE_DISPLAY_ORDER: Record<string, number> = {
+  "6a2bce77e22a649273d0c08d": 1, // Thumbnail Design
+  "6a2bce77e22a649273d0c08e": 2, // YouTube Shorts (Under 1 Min)
+  "6a2bce77e22a649273d0c08f": 3, // 1–3 Minute Video Editing
+  "6a2bce77e22a649273d0c090": 4, // 1–5 Minute Video Editing
+  "6a2bce77e22a649273d0c08b": 5, // Video Upload Service
+  "6a2bce77e22a649273d0c08c": 6, // YouTube Channel Creation
 };
 
 function getServiceIcon(title: string) {
@@ -200,8 +211,18 @@ export default function ServiceDetailPage() {
                     </Badge>
                   </div>
 
+
+
+
+
                   <div className="space-y-12">
-                    {categoryServices.map(service => {
+                    {[...categoryServices]
+  .sort((a, b) => {
+    const orderA = SERVICE_DISPLAY_ORDER[a.id] ?? 999;
+    const orderB = SERVICE_DISPLAY_ORDER[b.id] ?? 999;
+    return orderA - orderB;
+  })
+  .map(service => {
                       const displayTitle = SERVICE_TITLE_MAP[service.id] || service.title;
 
                       return (
@@ -294,6 +315,16 @@ export default function ServiceDetailPage() {
                       );
                     })}
                   </div>
+
+
+
+
+
+
+
+
+
+
                 </div>
               ))}
             </div>

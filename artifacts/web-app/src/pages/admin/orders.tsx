@@ -95,55 +95,115 @@ export default function AdminOrdersPage() {
               ) : (
                 <div className="divide-y divide-white/5">
                   {orders.map(order => (
-                    <div key={order.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                        <Package className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{order.serviceName ?? "Service"}</p>
-                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" />{order.userId}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Zap className="w-3 h-3 text-primary" />{order.pointsCost?.toLocaleString()} pts
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />{new Date(order.createdAt!).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium capitalize shrink-0 ${STATUS_STYLES[order.status ?? ""] ?? ""}`}>
-                        {order.status}
-                      </span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="glass-panel border-white/10">
-                          {order.status !== "processing" && (
-                            <DropdownMenuItem onClick={() => updateStatus({ id: order.id!, data: { status: "processing" } })}>
-                              <Loader className="w-4 h-4 mr-2 text-blue-400" /> Mark Processing
-                            </DropdownMenuItem>
-                          )}
-                          {order.status !== "completed" && (
-                            <DropdownMenuItem onClick={() => updateStatus({ id: order.id!, data: { status: "completed" } })}>
-                              <CheckCircle className="w-4 h-4 mr-2 text-green-400" /> Mark Completed
-                            </DropdownMenuItem>
-                          )}
-                          {order.status !== "cancelled" && (
-                            <DropdownMenuItem className="text-destructive" onClick={() => updateStatus({ id: order.id!, data: { status: "cancelled" } })}>
-                              <XCircle className="w-4 h-4 mr-2" /> Cancel Order
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    
+                    <div
+  key={order.id}
+  className="p-5 border-b border-white/5 hover:bg-white/5 transition-colors"
+>
+  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+    <div className="flex-1">
+      <div className="flex items-center gap-3 mb-2">
+        <Package className="w-5 h-5 text-primary" />
+
+        <h3 className="font-semibold text-base">
+          {order.notes ?? "Unknown Service"}
+        </h3>
+
+        <span
+          className={`text-xs px-2 py-1 rounded-full border font-medium capitalize ${STATUS_STYLES[order.status ?? ""]}`}
+        >
+          {order.status}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+
+        <p>
+          <strong>Order ID:</strong> {order.id}
+        </p>
+
+        <p>
+          <strong>User:</strong> {order.userId}
+        </p>
+
+        <p>
+          <strong>Points:</strong> {order.pointsCost} pts
+        </p>
+
+        <p>
+          <strong>Date:</strong>{" "}
+          {new Date(order.createdAt!).toLocaleDateString()}
+        </p>
+
+        {order.deliveryTime && (
+          <p>
+            <strong>Delivery:</strong> {order.deliveryTime}
+          </p>
+        )}
+      </div>
+    </div>
+
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm">
+          Actions
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        {order.status !== "processing" && (
+          <DropdownMenuItem
+            onClick={() =>
+              updateStatus({
+                id: order.id!,
+                data: { status: "processing" },
+              })
+            }
+          >
+            Mark Processing
+          </DropdownMenuItem>
+        )}
+
+        {order.status !== "completed" && (
+          <DropdownMenuItem
+            onClick={() =>
+              updateStatus({
+                id: order.id!,
+                data: { status: "completed" },
+              })
+            }
+          >
+            Mark Completed
+          </DropdownMenuItem>
+        )}
+
+        {order.status !== "cancelled" && (
+          <DropdownMenuItem
+            onClick={() =>
+              updateStatus({
+                id: order.id!,
+                data: { status: "cancelled" },
+              })
+            }
+          >
+            Cancel Order
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+
+  </div>
+</div>
                   ))}
                 </div>
               )}
+
+
+
+
+
+
               {totalPages > 1 && (
                 <div className="flex justify-center gap-2 p-4 border-t border-white/5">
                   <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>

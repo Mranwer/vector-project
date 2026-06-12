@@ -2,10 +2,44 @@ import { Service } from "./models/Service";
 
 export async function seedServices() {
   try {
-    const count = await Service.countDocuments(); if (count > 0) { console.log("⏭️ Seed skipped — services already exist"); return; }
+    const count = await Service.countDocuments(); 
+    if (count > 0) { console.log("⏭️ Seed skipped — services already exist"); return; }
 
     const services = [
       // ═════════ YOUTUBE ═════════
+
+      {
+  title: "Video Upload Service",
+  description: "Upload video to YouTube with title, description and tags.",
+  category: "YouTube Services",
+  subcategory: "Upload",
+  pointsCost: 10,
+  deliveryTime: "Same day",
+  status: "active",
+  order: 5,
+  features: [
+    "Video Upload",
+    "Title Setup",
+    "Description Setup",
+    "Tags Setup"
+  ],
+},
+
+{
+  title: "YouTube Channel Creation",
+  description: "Complete YouTube channel setup.",
+  category: "YouTube Services",
+  subcategory: "Channel Setup",
+  pointsCost: 1,
+  deliveryTime: "Same day",
+  status: "active",
+  order: 6,
+  features: [
+    "Channel Creation",
+    "Basic Setup",
+    "Profile Setup"
+  ],
+},
 
       {
         title: "Thumbnail Design",

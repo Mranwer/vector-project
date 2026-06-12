@@ -27,6 +27,7 @@ export interface IPackage {
   deliveryTime: string;
   features: string[];
   status: "active" | "inactive";
+  order?:number;
 }
 
 export interface IService extends Document {
@@ -76,6 +77,8 @@ const PackageSchema = new Schema<IPackage>(
         "Ads Management",
         "Pixel Setup",
         "Ads Audit",
+        "Video Upload",
+        "Channel Creation",
       ],
       required: true,
     },

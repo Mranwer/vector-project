@@ -1,11 +1,19 @@
-import { Zap, Twitter, Github, Linkedin, Instagram, Youtube, Facebook } from "lucide-react";
+import {
+  Zap,
+  Instagram,
+  Youtube,
+  Facebook,
+  Mail,
+  Phone,
+  MessageCircle,
+} from "lucide-react";
 import { Link } from "wouter";
 
 export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-background/80 pt-16 pb-8">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-12 mb-12">
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]">
@@ -48,6 +56,31 @@ export function Footer() {
               <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
             </ul>
           </div>
+
+          <div>
+  <h4 className="font-semibold mb-4">Contact</h4>
+  <ul className="space-y-3 text-sm text-muted-foreground">
+    <li>
+      <a
+        href="mailto:vectortechnology@55gmail.com"
+        className="flex items-center gap-2 hover:text-primary transition-colors">
+        <Mail className="w-4 h-4" />
+          vectortechnology
+      </a>
+    </li>
+
+    <li>
+      <a
+        href="tel:+918936056534"
+        className="flex items-center gap-2 hover:text-primary transition-colors"
+      >
+        <Phone className="w-4 h-4" />
+        +91 8936056534
+      </a>
+    </li>
+  </ul>
+</div>      
+
         </div>
         
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
@@ -59,6 +92,18 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      <a
+  href="https://wa.me/918936056534"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all hover:scale-110 hover:shadow-xl"
+>
+  <MessageCircle className="h-7 w-7" />
+</a>
     </footer>
+
+    
   );
+  
 }
