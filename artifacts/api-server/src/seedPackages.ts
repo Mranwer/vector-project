@@ -76,7 +76,7 @@ const packagesData: Record<string, Array<{
   {
     tier: "Standard",
     group: "Video <1min",
-    pointsCost: 49,
+    pointsCost: 59,
     deliveryTime: "3 days",
     features: [
       "3 Short Videos",
@@ -90,7 +90,7 @@ const packagesData: Record<string, Array<{
   {
     tier: "Advanced",
     group: "Video <1min",
-    pointsCost: 69,
+    pointsCost: 149,
     deliveryTime: "4 days",
     features: [
       "5 Short Videos",
@@ -134,7 +134,7 @@ const packagesData: Record<string, Array<{
   {
     tier: "Advanced",
     group: "Video 1-3min",
-    pointsCost: 79,
+    pointsCost: 169,
     deliveryTime: "5 days",
     features: [
       "Motion Graphics",
@@ -178,7 +178,7 @@ const packagesData: Record<string, Array<{
   {
     tier: "Advanced",
     group: "Video 1-5min",
-    pointsCost: 99,
+    pointsCost: 179,
     deliveryTime: "7 days",
     features: [
       "Motion Graphics",

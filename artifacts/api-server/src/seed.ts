@@ -2,6 +2,7 @@ import { Service } from "./models/Service";
 
 export async function seedServices() {
   try {
+    // await Service.deleteMany({});
     const count = await Service.countDocuments(); 
     if (count > 0) { console.log("⏭️ Seed skipped — services already exist"); return; }
 

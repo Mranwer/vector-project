@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import PortfolioShowcase from "@/components/portfolio-showcase";
 
 import {
   Youtube,
@@ -224,6 +225,7 @@ export default function ServicesPage() {
               })}
         </div>
       </div>
+      <PortfolioShowcase />
     </PublicLayout>
   );
 }

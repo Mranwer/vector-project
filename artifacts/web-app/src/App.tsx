@@ -22,6 +22,7 @@ import AdminUsersPage from "@/pages/admin/users";
 import AdminServicesPage from "@/pages/admin/services";
 import AdminOrdersPage from "@/pages/admin/orders";
 import AdminPaymentsPage from "@/pages/admin/payments";
+import PortfolioShowcase from "@/components/portfolio-showcase";
 
 setBaseUrl("https://vector-project.onrender.com");
 

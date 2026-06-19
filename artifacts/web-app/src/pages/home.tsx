@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import PortfolioShowcase from "@/components/portfolio-showcase";
 
 import {
   Zap,
@@ -309,6 +310,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <PortfolioShowcase />
 
       {/* HOW IT WORKS */}
       <section className="py-20 px-4 border-t border-white/5">

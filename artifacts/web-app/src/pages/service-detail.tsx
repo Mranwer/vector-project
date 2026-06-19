@@ -23,6 +23,7 @@ import {
   Image,
   Video,
   Youtube,
+  HelpCircle,
 } from "lucide-react";
 
 interface ServicePackage {
@@ -54,21 +55,21 @@ interface SelectedOrder {
 }
 
 const SERVICE_TITLE_MAP: Record<string, string> = {
-  "6a2bce77e22a649273d0c08d": "Thumbnail Design",
-  "6a2bce77e22a649273d0c08e": "YouTube Shorts (Under 1 Min)",
-  "6a2bce77e22a649273d0c08f": "1–3 Minute Video Editing",
-  "6a2bce77e22a649273d0c090": "1–5 Minute Video Editing",
-  "6a2bce77e22a649273d0c08b": "Video Upload Service",
-  "6a2bce77e22a649273d0c08c": "YouTube Channel Creation",
+  "6a3431187cfc991e425e6dd9": "Thumbnail Design",
+  "6a3431187cfc991e425e6dda": "YouTube Shorts (Under 1 Min)",
+  "6a3431187cfc991e425e6ddb": "1–3 Minute Video Editing",
+  "6a3431187cfc991e425e6ddc": "1–5 Minute Video Editing",
+  "6a3431187cfc991e425e6dd7": "Video Upload Service",
+  "6a3431187cfc991e425e6dd8": "YouTube Channel Creation",
 };
 
 const SERVICE_DISPLAY_ORDER: Record<string, number> = {
-  "6a2bce77e22a649273d0c08d": 1, // Thumbnail Design
-  "6a2bce77e22a649273d0c08e": 2, // YouTube Shorts (Under 1 Min)
-  "6a2bce77e22a649273d0c08f": 3, // 1–3 Minute Video Editing
-  "6a2bce77e22a649273d0c090": 4, // 1–5 Minute Video Editing
-  "6a2bce77e22a649273d0c08b": 5, // Video Upload Service
-  "6a2bce77e22a649273d0c08c": 6, // YouTube Channel Creation
+  "6a3431187cfc991e425e6dd9": 1, // Thumbnail Design
+  "6a3431187cfc991e425e6dda": 2, // YouTube Shorts (Under 1 Min)
+  "6a3431187cfc991e425e6ddb": 3, // 1–3 Minute Video Editing
+  "6a3431187cfc991e425e6ddc": 4, // 1–5 Minute Video Editing
+  "6a3431187cfc991e425e6dd7": 5, // Video Upload Service
+  "6a3431187cfc991e425e6dd8": 6, // YouTube Channel Creation
 };
 
 function getServiceIcon(title: string) {
@@ -99,6 +100,7 @@ export default function ServiceDetailPage() {
   const [orderError, setOrderError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [isOrdering, setIsOrdering] = useState(false);
+  const [showPriceGuide, setShowPriceGuide] = useState(false);
 
   useEffect(() => {
     fetch("/api/services?limit=100")
@@ -170,12 +172,23 @@ export default function ServiceDetailPage() {
       <section className="pt-24 pb-20 px-4">
         <div className="container mx-auto max-w-6xl">
 
-          <Link href="/services">
-            <Button variant="ghost" className="mb-8 gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Services
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+            <Link href="/services">
+              <Button variant="ghost" className="gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Services
+              </Button>
+            </Link>
+
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setShowPriceGuide(true)}
+            >
+              <HelpCircle className="w-4 h-4" />
+              Confused about points?
             </Button>
-          </Link>
+          </div>
 
           <div className="mb-10">
             <h1 className="text-3xl font-bold mb-2">All Service Packages</h1>
@@ -210,10 +223,6 @@ export default function ServiceDetailPage() {
                       {category}
                     </Badge>
                   </div>
-
-
-
-
 
                   <div className="space-y-12">
                     {[...categoryServices]
@@ -315,16 +324,6 @@ export default function ServiceDetailPage() {
                       );
                     })}
                   </div>
-
-
-
-
-
-
-
-
-
-
                 </div>
               ))}
             </div>
@@ -381,6 +380,25 @@ export default function ServiceDetailPage() {
             <Button onClick={() => navigate("/dashboard/orders")}>
               View Orders
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Price Guide Dialog */}
+      <Dialog open={showPriceGuide} onOpenChange={setShowPriceGuide}>
+        <DialogContent className="glass-panel border-white/10 max-w-3xl p-2 sm:p-4">
+          <DialogHeader>
+            <DialogTitle>Points Pricing Guide</DialogTitle>
+            <DialogDescription>
+              Yeh chart dekh kar samajho ki points kis service ke liye kitne lagte hain.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[75vh] overflow-y-auto rounded-lg">
+            <img
+              src="/image1.png"
+              alt="Vector Technology Points Pricing Chart"
+              className="w-full h-auto rounded-lg"
+            />
           </div>
         </DialogContent>
       </Dialog>
