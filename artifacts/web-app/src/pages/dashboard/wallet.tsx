@@ -360,7 +360,7 @@ export default function WalletPage() {
                           <span className="text-xs text-muted-foreground">points</span>
                         </div>
                         <p className="text-base font-semibold">₹{pkg.price.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">{valuePerRupee} pts/₹</p>
+                        {/* <p className="text-xs text-muted-foreground">{valuePerRupee} pts/₹</p> */}
                       </div>
                     </div>
 
