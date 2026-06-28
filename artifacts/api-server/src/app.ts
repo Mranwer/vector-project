@@ -71,4 +71,14 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/api", router);
 
+// Health check
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+// Root route
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "Vector Backend Running!" });
+});
+
 export default app;
